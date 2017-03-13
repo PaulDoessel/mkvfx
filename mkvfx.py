@@ -13,6 +13,7 @@ import platform
 import subprocess
 import sys
 import time
+from collections import OrderedDict
 
 version = "0.2.0"
 print "mkvfx", version
@@ -22,9 +23,10 @@ print "mkvfx", version
 #-----------------------------------------------------
 
 option_do_fetch = 1
+option_do_fetch_override = 0
 option_do_build = 1
 option_do_install = 1
-option_do_dependencies = 1
+option_do_dependencies = False
 option_build_all = 0
 option_force_build = 0
 
@@ -43,7 +45,10 @@ def print_help():
     for p in package_recipes:
         if package_recipes[p]["platforms"]:
             if build_platform in package_recipes[p]["platforms"]:
-                print ' ', package_recipes[p]['name']
+                dep = "-"
+                if 'dependencies' in package_recipes[p].keys():
+                    dep = ','.join(package_recipes[p]['dependencies'])
+                print ' ', package_recipes[p]['name'], '::', dep
         else:
             print ' ', package_recipes[p]['name']
     print "\nNote that git repos are shallow cloned.\n"
@@ -92,6 +97,11 @@ if platform.system() == "Darwin":
     platform_compiler = "clang"
     recipes_file = "recipes-osx64.json"
 
+if platform.system() == "Linux":
+    build_platform = "linux"
+    platform_compiler = "gcc"
+    recipes_file = "recipes-linux.json"
+
 if platform.system() == "Windows":
     if not 'DXSDK_DIR' in os.environ:
         os.environ['DXSDK_DIR'] = ' ' # Some cmake recipes still believe in this obsolete variable
@@ -121,6 +131,7 @@ def userHome():
 home = userHome()
 
 mkvfx_root = cwd + "/local"
+mkvfx_root = home + "/mkvfx-release"
 mkvfx_source_root = home + "/mkvfx-sources"
 mkvfx_build_root = home + "/mkvfx-build"
 
@@ -410,7 +421,7 @@ def runRecipe(recipe, package_name, package, dir_name, execute):
 
 def bake(package_name):
     global built_packages, package_recipes
-    global option_do_dependencies, option_do_fetch, option_do_build, option_do_install
+    global option_do_dependencies, option_do_fetch, option_do_fetch_override, option_do_build, option_do_install
     global build_platform
     global mkvfx_source_root
     global lower_case_map
@@ -476,10 +487,15 @@ def bake(package_name):
                         command = '7z x "' + dir_path + '/download.tar.gz' + '" -so | 7z x -aoa -si -ttar -o"' + dir_path + '"'
                         execTask('cmd.exe \'/C' + command, dir_path)
                     else:
-                        command = "curl -L -o " + dir_path + "/" + package_name + ".tgz " + url
-                        execTask(command, dir_path)
-                        command = "tar -zxf " + package_name + ".tgz"
-                        execTask(command, dir_path)
+                        download_file = dir_path + "/" + package_name + ".tgz"
+
+                        if os.path.exists(download_file) and not option_do_fetch_override:
+                            pass
+                        else:
+                            command = "curl -L -o " + download_file + " " + url
+                            execTask(command, dir_path)
+                            command = "tar -zxf " + package_name + ".tgz"
+                            execTask(command, dir_path)
     else:
         print "Repository not specified, nothing to fetch"
 
@@ -513,7 +529,8 @@ except Exception as e:
     print "Could not read", recipe_path, "because", e
     sys.exit(0)
 
-json_data = json.loads(data)
+
+json_data = json.loads(data, object_pairs_hook=OrderedDict)
 
 for package in json_data['packages']:
     name = package['name']
@@ -533,7 +550,7 @@ try:
     manifest_file = open(manifest_file_path, 'r')
     data = manifest_file.read()
     manifest_file.close()
-    built_packages = json.loads(data)
+    #built_packages = json.loads(data)
 except:
     pass # if there was no existing manifest, it's fine
 
