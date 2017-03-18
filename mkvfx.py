@@ -26,7 +26,7 @@ option_do_fetch = 1
 option_do_fetch_override = 0
 option_do_build = 1
 option_do_install = 1
-option_do_dependencies = False
+option_do_dependencies = True
 option_build_all = 0
 option_force_build = 0
 

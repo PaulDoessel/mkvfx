@@ -270,9 +270,9 @@
 			"platforms": ["osx", "windows", "linux"],
 			"dir": "boost",
             "notes": "building boost 1.60 for vs2014 compatibility, 1.57 is minimum for OSX, 1.55 is vfxplatform",
-            "notes_linux": "sudo apt-get install  libpython2.7-dev; sudo apt-get install libbz2-dev",
+            "notes_linux": "sudo apt-get install  libpython2.7-dev; sudo apt-get install libbz2-dev, ",
 			"build_in": "$(MKVFX_SRC_ROOT)/boost/boost_1_61_0",
-			"dependencies": [ "boost-build-club" ],
+			"dependencies": [ "boost-build-club", "bzip2" ],
 			"repository": {
 				"type": "curl-tgz",
 				"url": "https://downloads.sourceforge.net/project/boost/boost/1.61.0/boost_1_61_0.tar.gz"
@@ -360,8 +360,9 @@
 				"type": "git",
 				"url": "git://github.com/PixarAnimationStudios/OpenSubdiv.git"
 			},
+			"notes": "sudo apt-get install libxrandr-dev libxxf86vm-dev libxcursor-dev xorg-dev libglu1-mesa-dev",
 			"recipe_linux": [
-				"cmake -DCMAKE_INSTALL_PREFIX=$(MKVFX_ROOT) -DGLEW_LOCATION=$(MKVFX_ROOT) $(MKVFX_SRC_ROOT)/OpenSubdiv",
+				"cmake -DCMAKE_INSTALL_PREFIX=$(MKVFX_ROOT) -DGLEW_INCLUDE_DIR=\"$(MKVFX_ROOT)/include\" -DGLEW_LIBRARY=$(MKVFX_ROOT)/lib64 $(MKVFX_SRC_ROOT)/OpenSubdiv",
 				"make -j 4"
 			],
 			"install_linux": [
@@ -382,7 +383,7 @@
 				"cp $(MKVFX_SRC_ROOT)/OpenSubdiv/opensubdiv/vtr/*.h $(MKVFX_ROOT)/include/opensubdiv/vtr"
 			],
 			"recipe_osx": [
-				"cmake -DCMAKE_INSTALL_PREFIX=$(MKVFX_ROOT) -DGLEW_LOCATION=$(MKVFX_ROOT) $(MKVFX_SRC_ROOT)/OpenSubdiv",
+				"cmake -DCMAKE_INSTALL_PREFIX=$(MKVFX_ROOT) -DGLEW_LIBRARY=$(MKVFX_ROOT)/lib64 $(MKVFX_SRC_ROOT)/OpenSubdiv",
 				"make -j 4"
 			],
 			"install_osx": [
@@ -460,6 +461,67 @@
 				"ln -s -f $(MKVFX_ROOT)/lib/libOpenColorIO.dylib $(MKVFX_ROOT)/bin/libOpenColorIO.dylib"
 			]
 		},
+		{
+			"name": "OpenImageIO",
+			"platforms": ["osx","linux"],
+			"notes": "Specify FIELD3D_HOME= when Field3d is built",
+			"dir": "OpenImageIO",
+			"build_in": "/tmp/OpenImageIO",
+			"dependencies": [ "boost", "jpeg", "libpng", "libtiff", "OpenColorIO", "ptex", "glew" ],
+			"repository": {
+				"type": "git",
+				"url": "git://github.com/OpenImageIO/oiio.git"
+			},
+			"old":[
+                    "-DBOOST_ROOT=$(MKVFX_ROOT) +",
+                    "-DBOOST_LIBRARYDIR=$(MKVFX_ROOT)/lib +",
+                    "-DBoost_USE_STATIC_LIBS:INT=1 +",
+                    "-DBoost_LIBRARY_DIR_RELEASE=$(MKVFX_ROOT)/lib +",
+                    "-DBoost_LIBRARY_DIR_DEBUG=$(MKVFX_ROOT)/lib +",
+
+
+
+					"-DBOOST_INCLUDEDIR=\"$(MKVFX_ROOT)/include\" +",
+					"-DBOOST_LIBRARYDIR=\"$(MKVFX_ROOT)/lib\" +"
+
+			],
+
+			"recipe": [
+				"cmake -DCMAKE_INSTALL_PREFIX=$(MKVFX_ROOT) +",
+					"-DCMAKE_CXX_COMPILER_WORKS=1 +",
+                    "-DUSE_FFMPEG=0 -DUSE_FREETYPE=0 -DUSE_OPENCV=0 -DUSE_FIELD3D=0 +",
+                    "-DUSE_JPEGTURBO=0 -DJPEG_LOCATION=$(MKVFX_ROOT) +",
+					"-DOPENEXR_CUSTOM_INCLUDE_DIR:STRING=$(MKVFX_ROOT)/include +",
+					"-DOPENEXR_CUSTOM_LIB_DIR=$(MKVFX_ROOT)/lib +",
+					"-DTIFF_INCLUDE_DIR=$(MKVFX_ROOT)/include +",
+					"-DJPEG_INCLUDE_DIR=$(MKVFX_ROOT)/include +",
+
+                    "-DBoost_INCLUDE_DIR=\"$(MKVFX_ROOT)/include\" +",
+                    "-DBoost_LIBRARY_DIRS=\"$(MKVFX_ROOT)/lib\" +",
+
+
+					"-DILMBASE_INCLUDE_PATH=$(MKVFX_ROOT)/include +",
+					"-DOPENEXR_INCLUDE_PATH=$(MKVFX_ROOT)/include +",
+					"-DOPENEXR_IMATH_LIBRARY=$(MKVFX_ROOT)/lib +",
+					"-DOPENEXR_ILMIMF_LIBRARY=$(MKVFX_ROOT)/lib +",
+					"-DOPENEXR_IEX_LIBRARY=$(MKVFX_ROOT)/lib +",
+					"-DOPENEXR_HALF_LIBRARY=$(MKVFX_ROOT)/lib +",
+					"-DOPENEXR_ILMTHREAD_LIBRARY=$(MKVFX_ROOT)/lib +",
+
+					"-DGLEW_INCLUDES=$(MKVFX_ROOT)/include +",
+					"-DGLEW_LIBRARIES=$(MKVFX_ROOT)/lib64 +",
+
+
+					"-DOCIO_PATH=$(MKVFX_ROOT) +",
+					"-DPTEX_LOCATION=$(MKVFX_ROOT) +",
+					"-DVERBOSE=1 +",
+					"$(MKVFX_SRC_ROOT)/OpenImageIO",
+				"make -j 4 -d"
+			],
+			"install": [
+				"#make install"
+			]
+		},
 
 
 
@@ -469,6 +531,40 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		{
+			"name": "bzip2",
+			"platforms": ["linux"],
+			"dir": "bzip2",
+			"build_in": "$(MKVFX_SRC_ROOT)/bzip2",
+			"dependencies": [],
+			"repository": {
+				"type": "curl-tgz",
+				"url": "http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz"
+			},
+			"recipe_linux": [
+				"make -f Makefile-libbz2_so"
+			],
+			"install_linux": [
+				"cp $(MKVFX_SRC_ROOT)/bzip2/bzip2-1.0.6/libbz2.so.1.0 $(MKVFX_ROOT)/lib",
+				"cp $(MKVFX_SRC_ROOT)/bzip2/bzip2-1.0.6/libbz2.so.1.0.6 $(MKVFX_ROOT)/lib",
+				"cp $(MKVFX_SRC_ROOT)/bzip2/bzip2-1.0.6/bzlib.h $(MKVFX_ROOT)/include"
+			]
+		},
 
 
 
@@ -502,7 +598,11 @@
 					"-DBOOST_INCLUDEDIR=\"$(MKVFX_ROOT)/include\" +",
 					"-DBOOST_LIBRARYDIR=\"$(MKVFX_ROOT)/lib\" +",
                     "-DBoost_INCLUDE_DIR=\"$(MKVFX_ROOT)/include\" +",
-                    "-DBoost_LIBRARY_DIR=\"$(MKVFX_ROOT)/lib\"",
+                    "-DBoost_LIBRARY_DIR=\"$(MKVFX_ROOT)/lib\" +",
+                    "-DOPENSUBDIV_INCLUDE_DIR=\"$(MKVFX_ROOT)/include\" +",
+                    "-DOPENSUBDIV_LIBRARIES=\"$(MKVFX_ROOT)/lib\" +",
+					"-DGLEW_INCLUDE_DIR=\"$(MKVFX_ROOT)/include\" +",
+					"-DGLEW_LIBRARY=\"$(MKVFX_ROOT)/lib64\"",
 				"make -j 4"
 			],
 			"install_linux": [
@@ -842,51 +942,6 @@
 				"python setup.py install --user",
 				"cp -R $(MKVFX_SRC_ROOT)/numpy/numpy/core/include/numpy $(MKVFX_ROOT)/include/numpy",
 				"cp $(MKVFX_SRC_ROOT)/numpy/build/src.macosx-10.12-intel-2.7/numpy/core/include/numpy/* $(MKVFX_ROOT)/include/numpy"
-			]
-		},
-		{
-			"name": "OpenImageIO",
-			"platforms": ["osx","linux"],
-			"notes": "Specify FIELD3D_HOME= when Field3d is built",
-			"dir": "OpenImageIO",
-			"build_in": "/tmp/OpenImageIO",
-			"dependencies": [ "boost", "jpeg", "libpng", "libtiff", "OpenColorIO", "ptex", "glew" ],
-			"repository": {
-				"type": "git",
-				"url": "git://github.com/OpenImageIO/oiio.git"
-			},
-			"old":[
-                    "-DBOOST_ROOT=$(MKVFX_ROOT) +",
-                    "-DBOOST_LIBRARYDIR=$(MKVFX_ROOT)/lib +",
-                    "-DBoost_USE_STATIC_LIBS:INT=1 +",
-                    "-DBoost_LIBRARY_DIR_RELEASE=$(MKVFX_ROOT)/lib +",
-                    "-DBoost_LIBRARY_DIR_DEBUG=$(MKVFX_ROOT)/lib +",
-
-
-
-
-					"-DBOOST_INCLUDEDIR=\"$(MKVFX_ROOT)/include\" +",
-					"-DBOOST_LIBRARYDIR=\"$(MKVFX_ROOT)/lib\" +",
-                    "-DBoost_INCLUDE_DIR=\"$(MKVFX_ROOT)/include\" +",
-                    "-DBoost_LIBRARY_DIR=\"$(MKVFX_ROOT)/lib\" +"
-			],
-
-			"recipe": [
-				"cmake -DCMAKE_INSTALL_PREFIX=$(MKVFX_ROOT) +",
-					"-DCMAKE_CXX_COMPILER_WORKS=1 +",
-                    "-DUSE_FFMPEG=0 -DUSE_FREETYPE=0 -DUSE_OPENCV=0 -DUSE_FIELD3D=0 +",
-                    "-DUSE_JPEGTURBO=0 -DJPEG_LOCATION=$(MKVFX_ROOT) +",
-					"-DOPENEXR_CUSTOM_INCLUDE_DIR:STRING=$(MKVFX_ROOT)/include +",
-					"-DOPENEXR_CUSTOM_LIB_DIR=$(MKVFX_ROOT)/lib +",
-
-					"-DOCIO_PATH=$(MKVFX_ROOT) +",
-					"-DPTEX_LOCATION=$(MKVFX_ROOT) +",
-					"-DVERBOSE=1 +",
-					"$(MKVFX_SRC_ROOT)/OpenImageIO",
-				"make -j 4 -d"
-			],
-			"install": [
-				"make install"
 			]
 		},
 		{
